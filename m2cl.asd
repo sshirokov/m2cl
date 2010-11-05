@@ -4,6 +4,6 @@
   :author "Nicolas Martyanoff"
   :license "BSD"
   :description "A handler for the mongrel2 HTTP server."
-  :depends-on (:cl-json :zeromq)
+  :depends-on (:cl-json :cl-ppcre :zeromq)
   :components ((:file "packages")
                (:file "m2cl" :depends-on ("packages"))))
