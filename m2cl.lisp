@@ -124,6 +124,9 @@
                            (headers (list)))
   (handler-reply handler request (http-format body code status headers)))
 
+(defun handler-reply-json (handler request data)
+  (handler-reply handler request (json:encode-json-to-string data)))
+
 (defun handler-deliver-http (handler uuid connection-ids body
                              &key
                              (code 200)
@@ -131,6 +134,10 @@
                              (headers (list)))
   (handler-deliver handler uuid connection-ids
                    (http-format body code status headers)))
+
+(defun handler-deliver-json (handler uuid connection-ids data)
+  (handler-deliver handler uuid connection-ids
+                   (json:encode-json-to-string data)))
 
 (defun http-format (body code status headers)
   (with-output-to-string (stream)
