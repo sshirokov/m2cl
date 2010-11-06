@@ -1,5 +1,5 @@
 *.fasl
 
-/config.sqlite
-/logs
-/run
+/examples/config.sqlite
+/examples/logs
+/examples/run
