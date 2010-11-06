@@ -75,3 +75,56 @@
                      :path path
                      :headers (headers-parse headers-string)
                      :body (netstring-parse rest)))))
+
+(defun format-crlf (stream format-string &rest args)
+    (format stream "~?~C~C"
+            format-string args #\Return #\Linefeed))
+
+(defun handler-send (handler uuid connection-id data)
+  (zmq:send (handler-pub-socket handler)
+            (make-instance 'zmq:msg
+                           :data (format nil "~A ~A:~A, ~A"
+                                         uuid
+                                         (length connection-id)
+                                         connection-id
+                                         data))))
+
+(defun handler-deliver (handler uuid connection-ids data)
+  (handler-send handler uuid (format nil "~{~A~^ ~}" connection-ids) data))
+
+(defun handler-reply (handler request string)
+  (handler-send handler
+                (request-sender request)
+                (request-connection-id request)
+                string))
+
+(defun handler-reply-http (handler request body
+                           &key
+                           (code 200)
+                           (status "OK")
+                           (headers (make-hash-table :test 'eql)))
+  (handler-reply handler request (http-format body code status headers)))
+
+(defun handler-deliver-http (handler uuid connection-ids body
+                             &key
+                             (code 200)
+                             (status "OK")
+                             (headers (make-hash-table :test 'eql)))
+  (handler-deliver handler uuid connection-ids
+                   (http-format body code status headers)))
+
+(defun http-format (body code status headers)
+  (with-output-to-string (stream)
+    (format-crlf stream "HTTP/1.1 ~A ~A" code status)
+    (format-crlf stream "Content-Length: ~A" (length body))
+    (maphash (lambda (name value)
+               (format-crlf stream "~A: ~A" name value))
+             headers)
+    (format-crlf stream "")
+    (format-crlf stream "~A" body)))
+
+(defun handler-close (handler request)
+  (handler-reply handler request ""))
+
+(defun handler-deliver-close (handler uuid connection-ids)
+  (handler-deliver handler uuid connection-ids ""))
