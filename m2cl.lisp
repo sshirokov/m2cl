@@ -62,12 +62,13 @@
 
 (defun request-parse (string)
   (ppcre:register-groups-bind (sender connection-id path rest)
-      ("(\\S+) (\\S+) (\\S+) (.*)" string)
+      ("(\\S+) (\\d+) (\\S+) (.*)" string)
     (multiple-value-bind (headers-string rest)
         (netstring-parse rest)
       (make-instance 'request
                      :sender sender
-                     :connection-id connection-id
+                     :connection-id (parse-integer
+                                     (coerce connection-id 'string))
                      :path path
                      :headers (headers-parse headers-string)
                      :body (netstring-parse rest)))))
@@ -77,13 +78,14 @@
             format-string args #\Return #\Linefeed))
 
 (defun handler-send (handler uuid connection-id data)
-  (zmq:send (handler-pub-socket handler)
-            (make-instance 'zmq:msg
-                           :data (format nil "~A ~A:~A, ~A"
-                                         uuid
-                                         (length connection-id)
-                                         connection-id
-                                         data))))
+  (let* ((connection-id-string (format nil "~A" connection-id))
+         (data (format nil "~A ~A:~A, ~A"
+                       uuid
+                       (length connection-id-string)
+                       connection-id-string
+                       data)))
+    (zmq:send (handler-pub-socket handler)
+              (make-instance 'zmq:msg :data data))))
 
 (defun handler-deliver (handler uuid connection-ids data)
   (handler-send handler uuid (format nil "~{~A~^ ~}" connection-ids) data))
