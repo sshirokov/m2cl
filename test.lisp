@@ -13,8 +13,8 @@
     (format t "  connection-id: ~A~%" connection-id)
     (format t "  path: ~A~%" path)
     (format t "  headers:~%")
-    (maphash (lambda (name value)
-               (format t "    ~A: ~A~%" name value))
-             headers)
+    (dolist (header headers)
+      (format t "    ~A: ~A~%" (car header) (cdr header)))
     (format t "  body: ~A~%" body))
-  (handler-reply-http handler request "ok"))
+  (handler-reply-http handler request "ok"
+                      :headers '(("Content-Type" . "text/plain"))))

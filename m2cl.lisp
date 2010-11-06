@@ -58,11 +58,7 @@
 
 (defun headers-parse (string)
   (let ((json:*json-identifier-name-to-lisp* 'identity))
-    (let ((alist (json-parse string))
-          (table (make-hash-table :test 'equal)))
-      (loop for (key . value) in alist
-           do (setf (gethash key table) value))
-      table)))
+    (json-parse string)))
 
 (defun request-parse (string)
   (ppcre:register-groups-bind (sender connection-id path rest)
@@ -102,14 +98,14 @@
                            &key
                            (code 200)
                            (status "OK")
-                           (headers (make-hash-table :test 'eql)))
+                           (headers (list)))
   (handler-reply handler request (http-format body code status headers)))
 
 (defun handler-deliver-http (handler uuid connection-ids body
                              &key
                              (code 200)
                              (status "OK")
-                             (headers (make-hash-table :test 'eql)))
+                             (headers (list)))
   (handler-deliver handler uuid connection-ids
                    (http-format body code status headers)))
 
@@ -117,9 +113,8 @@
   (with-output-to-string (stream)
     (format-crlf stream "HTTP/1.1 ~A ~A" code status)
     (format-crlf stream "Content-Length: ~A" (length body))
-    (maphash (lambda (name value)
-               (format-crlf stream "~A: ~A" name value))
-             headers)
+    (dolist (header headers)
+      (format-crlf stream "~A: ~A" (car header) (cdr header)))
     (format-crlf stream "")
     (format-crlf stream "~A" body)))
 
