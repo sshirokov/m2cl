@@ -22,7 +22,17 @@
     :initarg :headers)
    (body
     :initarg :body
-    :accessor request-body)))
+    :accessor request-body)
+   (data
+    :initarg :data
+    :accessor request-data
+    :initform nil)))
+
+(defun request-header (request name &optional default)
+  (let ((header (assoc name (request-headers request) :test 'string=)))
+    (if header
+        (cdr header)
+        default)))
 
 (defmacro with-handler ((handler sender-id sub-address pub-address)
                         &body body)
@@ -42,6 +52,13 @@
   (let ((message (make-instance 'zmq:msg)))
     (zmq:recv (handler-pull-socket handler) message)
     (request-parse (zmq:msg-data-as-string message))))
+
+(defun handler-receive-json (handler)
+  (let ((request (handler-receive handler)))
+    (with-slots (data) request
+      (unless data
+        (setf data (json-parse (request-body request)))))
+    request))
 
 (defun netstring-parse (string)
   (let ((colon (position #\: string)))
@@ -65,13 +82,17 @@
       ("(\\S+) (\\d+) (\\S+) (.*)" string)
     (multiple-value-bind (headers-string rest)
         (netstring-parse rest)
-      (make-instance 'request
-                     :sender sender
-                     :connection-id (parse-integer
-                                     (coerce connection-id 'string))
-                     :path path
-                     :headers (headers-parse headers-string)
-                     :body (netstring-parse rest)))))
+      (let ((request (make-instance 'request
+                                    :sender sender
+                                    :connection-id (parse-integer
+                                                    (coerce connection-id 'string))
+                                    :path path
+                                    :headers (headers-parse headers-string)
+                                    :body (netstring-parse rest))))
+        (when (string= (request-header request "METHOD") "JSON")
+          (setf (request-data request)
+                (json-parse (request-body request))))
+        request))))
 
 (defun format-crlf (stream format-string &rest args)
     (format stream "~?~C~C"
