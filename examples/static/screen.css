@@ -19,15 +19,14 @@ h2 {
     margin-top: 2em;
 }
 
-#users {
+#user {
     float: left;
     width: 160px;
     min-height: 400px;
     padding: 2px;
-    background-color: red;
 }
 
-#userlist {
+#userList {
     list-style-type: none;
     padding: 0;
     margin: 0;
@@ -37,7 +36,6 @@ h2 {
     min-height: 400px;
     margin-left: 180px;
     padding: 2px;
-    background-color: green;
 }
 
 input, button {

@@ -3,7 +3,15 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
   <link rel="stylesheet" href="screen.css" />
+
+  <script type="text/javascript" src="jquery-1.4.3.min.js"></script>
+  <script type="text/javascript" src="jquery.media.js"></script>
+  <script type="text/javascript" src="jsonStringify.js"></script>
+  <script type="text/javascript" src="jsSocket.js"></script>
+  <script type="text/javascript" src="chat.js"></script>
+
   <title>m2cl</title>
 </head>
 
@@ -12,7 +20,7 @@
 
   <div id="chat">
     <div id="users">
-      <ul id="userlist">
+      <ul id="userList">
       </ul>
     </div>
 
@@ -20,7 +28,7 @@
     </div>
 
     <label for="nick">Nickname: </label>
-    <input type="text" id="nick" />
+    <input type="text" id="nick" value="Anonymous" />
     <button id="setNick">Change</button>
 
     <input type="text" id="input" />
