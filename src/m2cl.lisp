@@ -84,7 +84,7 @@
     (if space
         (values (babel:octets-to-string array :end space)
                 (subseq array (+ space 1)))
-        (values (babel:octets-to-string array) ""))))
+        (values (babel:octets-to-string array) #()))))
 
 (defun token-parse-n (array n)
   (labels ((get-next (acc rest c)
