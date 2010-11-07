@@ -77,9 +77,24 @@
   (let ((json:*json-identifier-name-to-lisp* 'identity))
     (json-parse string)))
 
+(defun token-parse (string)
+  (let ((space (position #\Space string)))
+    (if space
+        (values (subseq string 0 space) (subseq string (+ space 1)))
+        (values string ""))))
+
+(defun token-parse-n (string n)
+  (labels ((get-next (acc rest c)
+             (multiple-value-bind (token rest)
+                 (token-parse rest)
+               (if (< c n)
+                   (get-next (cons token acc) rest (+ c 1))
+                   (nreverse (cons rest (cons token acc)))))))
+    (get-next (list) string 1)))
+
 (defun request-parse (string)
-  (ppcre:register-groups-bind (sender connection-id path rest)
-      ("(\\S+) (\\d+) (\\S+) (.*)" string)
+  (destructuring-bind (sender connection-id path rest)
+      (token-parse-n string 3)
     (multiple-value-bind (headers-string rest)
         (netstring-parse rest)
       (let ((request (make-instance 'request
