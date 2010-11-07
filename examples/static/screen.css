@@ -1,0 +1,54 @@
+
+body {
+    font-size: 80%;
+}
+
+h1 {
+    font-size: 130%;
+    text-align: center;
+}
+
+h2 {
+    font-size: 110%;
+    text-align: center;
+}
+
+#chat {
+    width: 600px;
+    margin: auto;
+    margin-top: 2em;
+}
+
+#users {
+    float: left;
+    width: 160px;
+    min-height: 400px;
+    padding: 2px;
+    background-color: red;
+}
+
+#userlist {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#view {
+    min-height: 400px;
+    margin-left: 180px;
+    padding: 2px;
+    background-color: green;
+}
+
+input, button {
+    border: 1px solid black;
+}
+
+#nick {
+    margin-top: 1.5em;
+}
+
+#input {
+    width: 80%;
+    margin-top: 1em;
+}
