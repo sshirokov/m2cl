@@ -51,7 +51,7 @@
 (defun handler-receive (handler)
   (let ((message (make-instance 'zmq:msg)))
     (zmq:recv (handler-pull-socket handler) message)
-    (request-parse (zmq:msg-data-as-string message))))
+    (request-parse (zmq:msg-data-as-array message))))
 
 (defun handler-receive-json (handler)
   (let ((request (handler-receive handler)))
@@ -61,14 +61,16 @@
     request))
 
 (defun netstring-parse (string)
-  (let ((colon (position #\: string)))
+  (let ((colon (position (char-code #\:) string)))
     (unless colon
       (error "colon not found in netstring"))
-    (let* ((length (parse-integer string :end colon))
+    (let* ((length-string (babel:octets-to-string string :end colon))
+           (length (parse-integer length-string))
            (data (subseq string (+ colon 1) (+ colon length 1))))
-      (unless (char= (aref string (+ colon length 1)) #\,)
+      (unless (= (aref string (+ colon length 1)) (char-code #\,))
         (error "netstring doesn't end with comma"))
-      (values data (subseq string (+ colon length 2))))))
+      (values (babel:octets-to-string data)
+              (subseq string (+ colon length 2))))))
 
 (defun json-parse (string)
   (json:decode-json-from-string string))
@@ -77,24 +79,25 @@
   (let ((json:*json-identifier-name-to-lisp* 'identity))
     (json-parse string)))
 
-(defun token-parse (string)
-  (let ((space (position #\Space string)))
+(defun token-parse (array)
+  (let ((space (position (char-code #\Space) array)))
     (if space
-        (values (subseq string 0 space) (subseq string (+ space 1)))
-        (values string ""))))
+        (values (babel:octets-to-string array :end space)
+                (subseq array (+ space 1)))
+        (values (babel:octets-to-string array) ""))))
 
-(defun token-parse-n (string n)
+(defun token-parse-n (array n)
   (labels ((get-next (acc rest c)
              (multiple-value-bind (token rest)
                  (token-parse rest)
                (if (< c n)
                    (get-next (cons token acc) rest (+ c 1))
                    (nreverse (cons rest (cons token acc)))))))
-    (get-next (list) string 1)))
+    (get-next (list) array 1)))
 
-(defun request-parse (string)
+(defun request-parse (array)
   (destructuring-bind (sender connection-id path rest)
-      (token-parse-n string 3)
+      (token-parse-n array 3)
     (multiple-value-bind (headers-string rest)
         (netstring-parse rest)
       (let ((request (make-instance 'request
