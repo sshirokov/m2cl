@@ -112,28 +112,30 @@
                 (json-parse (request-body request))))
         request))))
 
-(defun format-crlf (stream format-string &rest args)
-    (format stream "~?~C~C"
-            format-string args #\Return #\Linefeed))
-
 (defun handler-send (handler uuid connection-id data)
   (let* ((connection-id-string (format nil "~A" connection-id))
-         (data (format nil "~A ~A:~A, ~A"
-                       uuid
-                       (length connection-id-string)
-                       connection-id-string
-                       data)))
+         (data-sequence (etypecase data
+                          (string (babel:string-to-octets data))
+                          (vector data)))
+         (msg-data (flex:with-output-to-sequence (stream)
+                     (write-sequence (babel:string-to-octets
+                                      (format nil "~A ~A:~A, "
+                                              uuid
+                                              (length connection-id-string)
+                                              connection-id-string))
+                                     stream)
+                     (write-sequence data-sequence stream))))
     (zmq:send (handler-pub-socket handler)
-              (make-instance 'zmq:msg :data data))))
+              (make-instance 'zmq:msg :data msg-data))))
 
 (defun handler-deliver (handler uuid connection-ids data)
   (handler-send handler uuid (format nil "~{~A~^ ~}" connection-ids) data))
 
-(defun handler-reply (handler request string)
+(defun handler-reply (handler request sequence)
   (handler-send handler
                 (request-sender request)
                 (request-connection-id request)
-                string))
+                sequence))
 
 (defun handler-reply-http (handler request body
                            &key
@@ -157,14 +159,20 @@
   (handler-deliver handler uuid connection-ids
                    (json:encode-json-to-string data)))
 
+(defun format-crlf (stream format-string &rest args)
+  (let ((string (format nil "~?~C~C"
+                        format-string args #\Return #\Linefeed)))
+    (write-sequence (babel:string-to-octets string) stream)))
+
 (defun http-format (body code status headers)
-  (with-output-to-string (stream)
-    (format-crlf stream "HTTP/1.1 ~A ~A" code status)
-    (format-crlf stream "Content-Length: ~A" (length body))
-    (dolist (header headers)
-      (format-crlf stream "~A: ~A" (car header) (cdr header)))
-    (format-crlf stream "")
-    (format stream "~A" body)))
+  (flex:with-output-to-sequence (stream)
+    (let ((body-sequence (babel:string-to-octets body)))
+      (format-crlf stream "HTTP/1.1 ~A ~A" code status)
+      (format-crlf stream "Content-Length: ~A" (length body-sequence))
+      (dolist (header headers)
+        (format-crlf stream "~A: ~A" (car header) (cdr header)))
+      (format-crlf stream "")
+      (write-sequence body-sequence stream))))
 
 (defun handler-close (handler request)
   (handler-reply handler request ""))
