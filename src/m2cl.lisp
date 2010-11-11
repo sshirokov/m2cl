@@ -164,7 +164,7 @@
     (dolist (header headers)
       (format-crlf stream "~A: ~A" (car header) (cdr header)))
     (format-crlf stream "")
-    (format-crlf stream "~A" body)))
+    (format stream "~A" body)))
 
 (defun handler-close (handler request)
   (handler-reply handler request ""))
