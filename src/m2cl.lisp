@@ -20,6 +20,9 @@
    (headers
     :accessor request-headers
     :initarg :headers)
+   (get-parameters
+    :accessor request-get-parameters
+    :initform nil)
    (body
     :initarg :body
     :accessor request-body)
@@ -32,6 +35,13 @@
   (let ((header (assoc name (request-headers request) :test 'string=)))
     (if header
         (cdr header)
+        default)))
+
+(defun request-get (request name &optional default)
+  (let ((get-parameter (assoc name (request-get-parameters request)
+                              :test 'string=)))
+    (if get-parameter
+        (cdr get-parameter)
         default)))
 
 (defmacro with-handler ((handler sender-id sub-address pub-address)
@@ -79,6 +89,42 @@
   (let ((json:*json-identifier-name-to-lisp* 'identity))
     (json-parse string)))
 
+(defun url-decode (string)
+  (let ((bytes (make-array (length string) :element-type '(unsigned-byte 8)
+                           :fill-pointer 0)))
+    (do ((i 0))
+        ((= i (length string)))
+      (let ((c (aref string i)))
+        (incf i)
+        (cond
+          ((char= c #\%)
+           (when (> (+ i 2) (length string))
+             (error "Invalid url encoding, truncated character code"))
+           (let ((code (parse-integer string :start i :end (+ i 2) :radix 16)))
+             (vector-push code bytes)
+             (incf i 2)))
+          ((char= c #\+)
+           (vector-push (char-code #\Space) bytes))
+          (t
+           (vector-push (char-code c) bytes)))))
+    (babel:octets-to-string bytes)))
+
+(defun query-parse (string)
+  (let ((data (list))
+        (pairs (ppcre:split "&|;" string)))
+    (dolist (pair pairs)
+      (let ((equal (position #\= pair)))
+        (unless equal
+          (error "Invalid query string encoding, equal separator not found"))
+        (let* ((name (subseq pair 0 equal))
+               (value (subseq pair (+ equal 1)))
+               (decoded-value (url-decode value)))
+          (push (cons name (if (string= decoded-value "")
+                               nil
+                               decoded-value))
+                data))))
+    (nreverse data)))
+
 (defun token-parse (array)
   (let ((space (position (char-code #\Space) array)))
     (if space
@@ -110,6 +156,10 @@
         (when (string= (request-header request "METHOD") "JSON")
           (setf (request-data request)
                 (json-parse (request-body request))))
+        (let ((query (request-header request "QUERY")))
+          (when query
+            (setf (request-get-parameters request)
+                  (query-parse query))))
         request))))
 
 (defun handler-send (handler uuid connection-id data)
