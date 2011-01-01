@@ -4,7 +4,7 @@
   :author "Nicolas Martyanoff"
   :license "BSD"
   :description "Examples for the m2cl mongrel2 handler."
-  :depends-on (:m2cl)
+  :depends-on (:bordeaux-threads :m2cl)
   :components ((:module "examples"
                         :components ((:file "packages")
                                      (:file "test" :depends-on ("packages"))

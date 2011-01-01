@@ -24,7 +24,26 @@
              *users*)
     connections))
 
-(defun run-chat ()
+(defvar *chat-thread* nil)
+
+(defun chat-start ()
+  (when *chat-thread*
+    (error "Handler is already running"))
+  (setf *chat-thread*
+        (bordeaux-threads:make-thread 'chat-loop
+                                      :name "chat handler")))
+
+(defun chat-stop ()
+  (when *chat-thread*
+    (when (bordeaux-threads:thread-alive-p *chat-thread*)
+      (bordeaux-threads:destroy-thread *chat-thread*))
+    (setf *chat-thread* nil)))
+
+(defun chat-restart ()
+  (chat-stop)
+  (chat-start))
+
+(defun chat-loop ()
   (m2cl:with-handler (handler "chat" "tcp://127.0.0.1:8092" "tcp://127.0.0.1:8093")
     (loop
        (let ((request (m2cl:handler-receive handler)))

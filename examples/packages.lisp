@@ -1,4 +1,5 @@
 
 (defpackage :m2cl-examples
   (:use :cl)
-  (:export :run-test :run-chat))
+  (:export :run-test
+           :chat-start :chat-stop :chat-restart))
