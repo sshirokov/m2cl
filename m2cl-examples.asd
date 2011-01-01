@@ -7,4 +7,5 @@
   :depends-on (:m2cl)
   :components ((:module "examples"
                         :components ((:file "packages")
-                                     (:file "test" :depends-on ("packages"))))))
+                                     (:file "test" :depends-on ("packages"))
+                                     (:file "chat" :depends-on ("packages"))))))
