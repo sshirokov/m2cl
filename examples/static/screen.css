@@ -22,7 +22,7 @@ h2 {
 #user {
     float: left;
     width: 160px;
-    min-height: 400px;
+    min-height: 200px;
     padding: 2px;
 }
 
@@ -33,7 +33,7 @@ h2 {
 }
 
 #view {
-    min-height: 400px;
+    min-height: 200px;
     margin-left: 180px;
     padding: 2px;
 }
