@@ -3,7 +3,7 @@ var socket = null;
 
 function onOpen() {
     socket.send({
-        "op": "join",
+        "type": "join",
         "nick": $("#nick").val()
     });
 }
@@ -15,7 +15,7 @@ function onData(data) {
     data = eval("(" + data + ")");
     console.log(data);
 
-    switch (data.op) {
+    switch (data.type) {
     case "message":
         message = "<strong>" + data.user + "</strong>" + " " + data.message;
         $("#view").append(message + "<br />");
@@ -39,14 +39,14 @@ function onData(data) {
 
 function setNick(nick) {
     socket.send({
-        "op": "setNick",
+        "type": "setNick",
         "nick": nick
     });
 }
 
 function sendMessage(user, message) {
     socket.send({
-        "op": "message",
+        "type": "message",
         "message": message,
         "user": user
     });
