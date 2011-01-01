@@ -1,12 +1,12 @@
 
 (in-package :m2cl-examples)
 
-(defun run-test ()
+(defun test-run ()
   (m2cl:with-handler (handler "dev" "tcp://127.0.0.1:8090" "tcp://127.0.0.1:8091")
     (loop
-       (process-request handler (m2cl:handler-receive-json handler)))))
+       (test-request-process handler (m2cl:handler-receive-json handler)))))
 
-(defun process-request (handler request)
+(defun test-request-process (handler request)
   (format t "~&message~%")
   (format t "  sender: ~A~%" (m2cl:request-sender request))
   (format t "  connection-id: ~A~%" (m2cl:request-connection-id request))

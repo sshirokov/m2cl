@@ -48,12 +48,12 @@
     (loop
        (let ((request (m2cl:handler-receive handler)))
          (handler-case
-             (process-request handler request)
+             (chat-request-process handler request)
            (chat-error (cond)
              (m2cl:handler-reply-json handler request
                                       `((:error . ,(chat-error-text cond))))))))))
 
-(defun process-request (handler request)
+(defun chat-request-process (handler request)
   (format t "[~A] message: ~A~%"
           (m2cl:request-connection-id request)
           (m2cl:request-data request))
