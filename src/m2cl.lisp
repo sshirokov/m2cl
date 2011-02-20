@@ -191,8 +191,13 @@
                            &key
                            (code 200)
                            (status "OK")
-                           (headers (list)))
-  (handler-reply handler request (http-format body code status headers)))
+                           (headers (list))
+                           binary-body)
+  (handler-reply handler request
+                 (http-format (if binary-body
+                                  body
+                                  (babel:string-to-octets body))
+                              code status headers)))
 
 (defun handler-reply-json (handler request data)
   (handler-reply handler request (json:encode-json-to-string data)))
@@ -201,9 +206,13 @@
                              &key
                              (code 200)
                              (status "OK")
-                             (headers (list)))
+                             (headers (list))
+                             binary-body)
   (handler-deliver handler uuid connection-ids
-                   (http-format body code status headers)))
+                   (http-format (if binary-body
+                                  body
+                                  (babel:string-to-octets body))
+                                code status headers)))
 
 (defun handler-deliver-json (handler uuid connection-ids data)
   (handler-deliver handler uuid connection-ids
@@ -216,13 +225,12 @@
 
 (defun http-format (body code status headers)
   (flex:with-output-to-sequence (stream)
-    (let ((body-sequence (babel:string-to-octets body)))
-      (format-crlf stream "HTTP/1.1 ~A ~A" code status)
-      (format-crlf stream "Content-Length: ~A" (length body-sequence))
-      (dolist (header headers)
-        (format-crlf stream "~A: ~A" (car header) (cdr header)))
-      (format-crlf stream "")
-      (write-sequence body-sequence stream))))
+    (format-crlf stream "HTTP/1.1 ~A ~A" code status)
+    (format-crlf stream "Content-Length: ~A" (length body))
+    (dolist (header headers)
+      (format-crlf stream "~A: ~A" (car header) (cdr header)))
+    (format-crlf stream "")
+    (write-sequence body stream)))
 
 (defun handler-close (handler request)
   (handler-reply handler request ""))
