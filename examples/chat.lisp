@@ -69,9 +69,7 @@
           (m2cl:request-data request))
   (let ((message (m2cl:request-data request))
         (connection-id (m2cl:request-connection-id request)))
-    (flet ((reply (data)
-             (m2cl:handler-reply-json handler request data))
-           (deliver (data)
+    (flet ((deliver (data)
              (m2cl:handler-deliver-json handler (m2cl:request-sender request)
                                         (get-connections) data))
            (get-field (key)
@@ -93,8 +91,7 @@
              (deliver (obj :type "userJoined"
                            :user nick))
              (deliver (obj :type "userList"
-                           :users (get-user-list)))
-             (reply '((:ok . t)))))
+                           :users (get-user-list)))))
           ((string= type "setNick")
            (let ((old-nick (gethash connection-id *users*))
                  (new-nick (get-field :nick)))
@@ -103,13 +100,11 @@
                            :users (get-user-list)))
              (deliver (obj :type "nickChange"
                            :old-nick old-nick
-                           :new-nick new-nick)))
-           (reply '((:ok . t))))
+                           :new-nick new-nick))))
           ((string= type "message")
            (deliver (obj :type "message"
                          :user (get-field :user)
-                         :message (get-field :message)))
-           (reply '((:ok . t))))
+                         :message (get-field :message))))
           (t (error 'chat-error
                     :text (format nil "invalid message: unknown message type ~A"
                                   type))))))))
