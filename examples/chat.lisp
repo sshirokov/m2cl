@@ -54,14 +54,16 @@
   (chat-start))
 
 (defun chat-loop ()
-  (m2cl:with-handler (handler "chat" "tcp://127.0.0.1:8092" "tcp://127.0.0.1:8093")
+  (m2cl:with-handler (handler "chat"
+                              "tcp://127.0.0.1:8092"
+                              "tcp://127.0.0.1:8093")
     (loop
        (let ((request (m2cl:handler-receive handler)))
          (handler-case
              (chat-request-process handler request)
            (chat-error (cond)
              (m2cl:handler-reply-json handler request
-                                      `((:error . ,(chat-error-text cond))))))))))
+                                      (obj :error (chat-error-text cond)))))))))
 
 (defun chat-request-process (handler request)
   (format t "[~A] message: ~A~%"
@@ -77,7 +79,7 @@
                (if field
                    (cdr field)
                    (error 'chat-error
-                          :text (format nil "invalid message: missing field ~A"
+                          :text (format nil "Invalid message: missing field ~A"
                                         key))))))
       (let ((type (get-field :type)))
         (cond
@@ -106,5 +108,5 @@
                          :user (get-field :user)
                          :message (get-field :message))))
           (t (error 'chat-error
-                    :text (format nil "invalid message: unknown message type ~A"
+                    :text (format nil "Invalid message: unknown message type ~A"
                                   type))))))))
