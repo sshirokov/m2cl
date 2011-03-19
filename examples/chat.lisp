@@ -3,6 +3,16 @@
 
 (defvar *users* (make-hash-table))
 
+(defun obj (&rest elements)
+  (let ((alist (list)))
+    (labels ((consume (rest)
+               (push (cons (car rest) (cadr rest)) alist)
+               (let ((tail (cddr rest)))
+                 (when tail
+                   (consume tail)))))
+      (consume elements))
+    (nreverse alist)))
+
 (define-condition chat-error (error)
   ((text
     :initarg :text
@@ -75,30 +85,30 @@
         (cond
           ((string= type "disconnect")
            (remhash connection-id *users*)
-           (deliver `((:type . "userList")
-                      (:users . ,(get-user-list)))))
+           (deliver (obj :type "userList"
+                         :users (get-user-list))))
           ((string= type "join")
            (let ((nick (get-field :nick)))
              (setf (gethash connection-id *users*) nick)
-             (deliver `((:type . "userJoined")
-                        (:user . ,nick)))
-             (deliver `((:type . "userList")
-                        (:users . ,(get-user-list))))
+             (deliver (obj :type "userJoined"
+                           :user nick))
+             (deliver (obj :type "userList"
+                           :users (get-user-list)))
              (reply '((:ok . t)))))
           ((string= type "setNick")
            (let ((old-nick (gethash connection-id *users*))
                  (new-nick (get-field :nick)))
              (setf (gethash connection-id *users*) new-nick)
-             (deliver `((:type . "userList")
-                        (:users . ,(get-user-list))))
-             (deliver `((:type . "nickChange")
-                        (:old-nick . ,old-nick)
-                        (:new-nick . ,new-nick))))
+             (deliver (obj :type "userList"
+                           :users (get-user-list)))
+             (deliver (obj :type "nickChange"
+                           :old-nick old-nick
+                           :new-nick new-nick)))
            (reply '((:ok . t))))
           ((string= type "message")
-           (deliver `((:type . "message")
-                      (:user . ,(get-field :user))
-                      (:message . ,(get-field :message))))
+           (deliver (obj :type "message"
+                         :user (get-field :user)
+                         :message (get-field :message)))
            (reply '((:ok . t))))
           (t (error 'chat-error
                     :text (format nil "invalid message: unknown message type ~A"
