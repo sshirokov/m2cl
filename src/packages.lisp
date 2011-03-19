@@ -8,9 +8,7 @@
 
            :with-handler
            :handler-receive :handler-receive-json
-           :handler-reply :handler-reply-http :handler-reply-json
+           :handler-send :handler-send-json :handler-send-http
            :handler-close
-           :handler-deliver :handler-deliver-http :handler-deliver-json
-           :handler-deliver-close
 
            :url-decode))

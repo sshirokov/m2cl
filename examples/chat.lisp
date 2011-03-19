@@ -62,8 +62,9 @@
          (handler-case
              (chat-request-process handler request)
            (chat-error (cond)
-             (m2cl:handler-reply-json handler request
-                                      (obj :error (chat-error-text cond)))))))))
+             (m2cl:handler-send-json handler
+                                     (obj :error (chat-error-text cond))
+                                     :request request)))))))
 
 (defun chat-request-process (handler request)
   (format t "[~A] message: ~A~%"
@@ -72,8 +73,9 @@
   (let ((message (m2cl:request-data request))
         (connection-id (m2cl:request-connection-id request)))
     (flet ((deliver (data)
-             (m2cl:handler-deliver-json handler (m2cl:request-sender request)
-                                        (get-connections) data))
+             (m2cl:handler-send-json handler data
+                                     :uuid (m2cl:request-sender request)
+                                     :connections (get-connections)))
            (get-field (key)
              (let ((field (assoc key message)))
                (if field

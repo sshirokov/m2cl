@@ -162,8 +162,13 @@
                   (query-parse query))))
         request))))
 
-(defun handler-send (handler uuid connection-id data)
-  (let* ((connection-id-string (format nil "~A" connection-id))
+(defun handler-send (handler data
+                     &key uuid connections request)
+  (assert (or request
+              (and uuid connections)))
+  (let* ((uuid (or uuid (request-connection-id request)))
+         (connections (or connections (list (request-connection-id request))))
+         (connections-string (format nil "~{~A~^ ~}" connections))
          (data-sequence (etypecase data
                           (string (babel:string-to-octets data))
                           (vector data)))
@@ -171,52 +176,33 @@
                      (write-sequence (babel:string-to-octets
                                       (format nil "~A ~A:~A, "
                                               uuid
-                                              (length connection-id-string)
-                                              connection-id-string))
+                                              (length connections-string)
+                                              connections-string))
                                      stream)
                      (write-sequence data-sequence stream))))
     (zmq:send (handler-pub-socket handler)
               (make-instance 'zmq:msg :data msg-data))))
 
-(defun handler-deliver (handler uuid connection-ids data)
-  (handler-send handler uuid (format nil "~{~A~^ ~}" connection-ids) data))
+(defun handler-send-json (handler data
+                          &key uuid connections request)
+  (handler-send handler (json:encode-json-to-string data)
+                :uuid uuid
+                :connections connections
+                :request request))
 
-(defun handler-reply (handler request sequence)
-  (handler-send handler
-                (request-sender request)
-                (request-connection-id request)
-                sequence))
-
-(defun handler-reply-http (handler request body
-                           &key
-                           (code 200)
-                           (status "OK")
-                           (headers (list))
-                           binary-body)
-  (handler-reply handler request
-                 (http-format (if binary-body
-                                  body
-                                  (babel:string-to-octets body))
-                              code status headers)))
-
-(defun handler-reply-json (handler request data)
-  (handler-reply handler request (json:encode-json-to-string data)))
-
-(defun handler-deliver-http (handler uuid connection-ids body
-                             &key
-                             (code 200)
-                             (status "OK")
-                             (headers (list))
-                             binary-body)
-  (handler-deliver handler uuid connection-ids
-                   (http-format (if binary-body
-                                  body
-                                  (babel:string-to-octets body))
-                                code status headers)))
-
-(defun handler-deliver-json (handler uuid connection-ids data)
-  (handler-deliver handler uuid connection-ids
-                   (json:encode-json-to-string data)))
+(defun handler-send-http (handler body
+                          &key
+                          uuid connections request
+                          (code 200) (status "OK")
+                          (headers (list))
+                          binary-body-p)
+  (let ((body (if binary-body-p
+                  body
+                  (babel:string-to-octets body))))
+    (handler-send handler (http-format body code status headers)
+                  :uuid uuid
+                  :connections connections
+                  :request request)))
 
 (defun format-crlf (stream format-string &rest args)
   (let ((string (format nil "~?~C~C"
@@ -232,8 +218,6 @@
     (format-crlf stream "")
     (write-sequence body stream)))
 
-(defun handler-close (handler request)
-  (handler-reply handler request ""))
-
-(defun handler-deliver-close (handler uuid connection-ids)
-  (handler-deliver handler uuid connection-ids ""))
+(defun handler-close (handler &key uuid connections request)
+  (handler-send handler ""
+                :uuid uuid :connections connections :request request))
