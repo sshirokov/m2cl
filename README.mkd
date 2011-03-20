@@ -1,0 +1,11 @@
+# `m2cl`
+
+## Description
+
+`m2cl` is a Common Lisp handler for the [mongrel2](http://mongrel2.org) web
+server.
+
+## Contact
+
+If you have suggestions, or if you found a bug, send me a message via github
+or mail me at <khaelin@gmail.com>.
