@@ -64,12 +64,12 @@
                      (zmq:msg-data-as-array message))))
     (values (request-parse raw) raw)))
 
-(defun handler-receive-json (handler)
-  (let ((request (handler-receive handler)))
+(defmethod handler-receive-json ((handler handler))
+  (multiple-value-bind (request raw) (handler-receive handler)
     (with-slots (data) request
       (unless data
         (setf data (json-parse (request-body request)))))
-    request))
+    (values request raw)))
 
 (defun netstring-parse (string)
   (let ((colon (position (char-code #\:) string)))
