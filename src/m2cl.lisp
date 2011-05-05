@@ -58,10 +58,11 @@
              (zmq:setsockopt pub-socket zmq:identity ,sender-id)
              ,@body))))))
 
-(defun handler-receive (handler)
-  (let ((message (make-instance 'zmq:msg)))
-    (zmq:recv (handler-pull-socket handler) message)
-    (request-parse (zmq:msg-data-as-array message))))
+(defmethod handler-receive ((handler handler))
+  (let* ((message (make-instance 'zmq:msg))
+         (raw (progn (zmq:recv (handler-pull-socket handler) message)
+                     (zmq:msg-data-as-array message))))
+    (values (request-parse raw) raw)))
 
 (defun handler-receive-json (handler)
   (let ((request (handler-receive handler)))
