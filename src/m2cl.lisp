@@ -31,6 +31,9 @@
     :accessor request-data
     :initform nil)))
 
+(defgeneric handler-receive (handler))
+(defgeneric handler-receive-json (handler))
+
 (defun request-header (request name &optional default)
   (let ((header (assoc name (request-headers request) :test 'string=)))
     (if header
