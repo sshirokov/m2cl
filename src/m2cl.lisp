@@ -34,6 +34,9 @@
 (defgeneric handler-receive (handler))
 (defgeneric handler-receive-json (handler))
 
+(defgeneric request-disconnect-p (request)
+  (:documentation "Returns t if the given `request' is a disconnect message"))
+
 (defun request-header (request name &optional default)
   (let ((header (assoc name (request-headers request) :test 'string=)))
     (if header
@@ -144,6 +147,10 @@
                    (get-next (cons token acc) rest (+ c 1))
                    (nreverse (cons rest (cons token acc)))))))
     (get-next (list) array 1)))
+
+(defmethod request-disconnect-p ((request request))
+  (and (string= (request-header request "METHOD") "JSON")
+       (eq :disconnect (cdr (assoc :type (request-data request))))))
 
 (defun request-parse (array)
   (destructuring-bind (sender connection-id path rest)

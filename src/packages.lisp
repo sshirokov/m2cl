@@ -4,6 +4,7 @@
   (:export :request-sender :request-connection-id :request-path
            :request-headers :request-body :request-data
            :request-get-parameters
+           :request-disconnect-p
            :request-header :request-get
 
            :with-handler
