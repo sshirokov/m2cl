@@ -31,8 +31,8 @@
     :accessor request-data
     :initform nil)))
 
-(defgeneric handler-receive (handler))
-(defgeneric handler-receive-json (handler))
+(defgeneric handler-receive (handler &optional timeout))
+(defgeneric handler-receive-json (handler &optional timeout))
 
 (defun request-header (request name &optional default)
   (let ((header (assoc name (request-headers request) :test 'string=)))
@@ -61,14 +61,14 @@
              (zmq:setsockopt pub-socket zmq:identity ,sender-id)
              ,@body))))))
 
-(defmethod handler-receive ((handler handler))
+(defmethod handler-receive ((handler handler) &optional (timeout -1))
   (let* ((message (make-instance 'zmq:msg))
          (raw (progn (zmq:recv (handler-pull-socket handler) message)
                      (zmq:msg-data-as-array message))))
     (values (request-parse raw) raw)))
 
-(defmethod handler-receive-json ((handler handler))
-  (multiple-value-bind (request raw) (handler-receive handler)
+(defmethod handler-receive-json ((handler handler) &optional (timeout -1))
+  (multiple-value-bind (request raw) (handler-receive handler timeout)
     (with-slots (data) request
       (unless data
         (setf data (json-parse (request-body request)))))
