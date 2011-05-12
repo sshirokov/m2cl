@@ -62,16 +62,20 @@
              ,@body))))))
 
 (defmethod handler-receive ((handler handler) &optional (timeout -1))
-  (let* ((message (make-instance 'zmq:msg))
-         (raw (progn (zmq:recv (handler-pull-socket handler) message)
-                     (zmq:msg-data-as-array message))))
-    (values (request-parse raw) raw)))
+  (zmq:with-polls ((readers ((handler-pull-socket handler) . zmq:pollin)))
+    (let (req raw (message (make-instance 'zmq:msg)))
+      (when (zmq:poll readers timeout)
+        (setf raw (progn (zmq:recv (handler-pull-socket handler) message)
+                         (zmq:msg-data-as-array message))
+              req (request-parse raw)))
+      (values req raw))))
 
 (defmethod handler-receive-json ((handler handler) &optional (timeout -1))
   (multiple-value-bind (request raw) (handler-receive handler timeout)
-    (with-slots (data) request
-      (unless data
-        (setf data (json-parse (request-body request)))))
+    (when request
+      (with-slots (data) request
+        (unless data
+          (setf data (json-parse (request-body request))))))
     (values request raw)))
 
 (defun netstring-parse (string)
