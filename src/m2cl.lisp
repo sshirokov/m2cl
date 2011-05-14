@@ -214,6 +214,12 @@
                 :connections connections
                 :request request))
 
+(defun handler-send-http-chunk (handler body
+                                &key
+                                uuid connections request
+                                binary-body-p)
+  :undef)
+
 (defun handler-send-http (handler body
                           &key
                           uuid connections request
