@@ -154,7 +154,7 @@
 
 (defmethod request-disconnect-p ((request request))
   (and (string= (request-header request "METHOD") "JSON")
-       (string-equal :disconnect (cdr (assoc :type (request-data request))))))
+       (string= "disconnect" (cdr (assoc :type (request-data request))))))
 
 (defun request-parse (array)
   (destructuring-bind (sender connection-id path rest)
