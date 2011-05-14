@@ -205,6 +205,16 @@
                 :connections connections
                 :request request))
 
+(defun handler-send-http-chunked (handler &key
+                                  uuid connections request
+                                  (code 200) (status "OK")
+                                  (headers (list)))
+  ;; TODO: Update `headers' with Transfer-Encoding: chunked
+  (handler-send handler (http-format nil code status headers)
+                :uuid uuid
+                :connections connections
+                :request request))
+
 (defun handler-send-http (handler body
                           &key
                           uuid connections request
