@@ -218,7 +218,17 @@
                                 &key
                                 uuid connections request
                                 binary-body-p)
-  :undef)
+  (let* ((body (if binary-body-p
+                   body
+                   (babel:string-to-octets body)))
+         (chunk (flex:with-output-to-sequence (stream)
+                  (format-crlf stream "~X" (length body))
+                  (write-sequence body stream)
+                  (format-crlf stream ""))))
+    (handler-send handler chunk
+                  :uuid uuid
+                  :connections connections
+                  :request request)))
 
 (defun handler-send-http (handler body
                           &key
