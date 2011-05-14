@@ -209,7 +209,6 @@
                                   uuid connections request
                                   (code 200) (status "OK")
                                   (headers (list)))
-  ;; TODO: Update `headers' with Transfer-Encoding: chunked
   (handler-send handler (http-format nil code status headers)
                 :uuid uuid
                 :connections connections
@@ -237,11 +236,14 @@
 (defun http-format (body code status headers)
   (flex:with-output-to-sequence (stream)
     (format-crlf stream "HTTP/1.1 ~A ~A" code status)
-    (format-crlf stream "Content-Length: ~A" (length body))
     (dolist (header headers)
       (format-crlf stream "~A: ~A" (car header) (cdr header)))
+    (if body
+      (format-crlf stream "Content-Length: ~A" (length body))
+      (format-crlf stream "Transfer-Encoding: chunked" (length body)))
     (format-crlf stream "")
-    (write-sequence body stream)))
+    (when body
+      (write-sequence body stream))))
 
 (defun handler-close (handler &key uuid connections request)
   (handler-send handler ""
