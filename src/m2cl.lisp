@@ -205,6 +205,15 @@
                 :connections connections
                 :request request))
 
+(defun handler-send-http-trailers (handler trailers &key
+                                   uuid connections request)
+  (handler-send handler (flex:with-output-to-sequence (stream)
+                          (http-headers-format trailers stream)
+                          (format-crlf stream ""))
+                :uuid uuid
+                :connections connections
+                :request request))
+
 (defun handler-send-http-chunked (handler &key
                                   uuid connections request
                                   (code 200) (status "OK")

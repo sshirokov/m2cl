@@ -11,6 +11,7 @@
            :handler-receive :handler-receive-json
            :handler-send :handler-send-json :handler-send-http
            :handler-send-http-chunked :handler-send-http-chunk
+           :handler-send-http-trailers
            :handler-close
 
            :url-decode))
