@@ -249,11 +249,15 @@
                         format-string args #\Return #\Linefeed)))
     (write-sequence (babel:string-to-octets string) stream)))
 
+(defun http-headers-format (headers &optional alt-stream)
+  (flex:with-output-to-sequence (stream)
+    (dolist (header headers)
+      (format-crlf (or alt-stream stream) "~A: ~A" (car header) (cdr header)))))
+
 (defun http-format (body code status headers)
   (flex:with-output-to-sequence (stream)
     (format-crlf stream "HTTP/1.1 ~A ~A" code status)
-    (dolist (header headers)
-      (format-crlf stream "~A: ~A" (car header) (cdr header)))
+    (http-headers-format headers stream)
     (if body
       (format-crlf stream "Content-Length: ~A" (length body))
       (format-crlf stream "Transfer-Encoding: chunked" (length body)))
