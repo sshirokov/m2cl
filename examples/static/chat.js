@@ -65,7 +65,7 @@ $(document).ready(function() {
         onClose: onClose
     });
 
-    socket.logger = console.log;
+    socket.logger = Function.prototype.bind.call(console.log, console);
 
     $("#setNick").click(function() {
         setNick($("#nick").val());
