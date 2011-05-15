@@ -267,20 +267,23 @@
     (dolist (header headers)
       (format-crlf (or alt-stream stream) "~A: ~A" (car header) (cdr header)))))
 
+(defmacro with-common-http-format ((code status headers) head-section &rest content-section)
+  `(flex:with-output-to-sequence (stream)
+     (format-crlf stream "HTTP/1.1 ~A ~A" ,code ,status)
+     (http-headers-format ,headers stream)
+     ,head-section
+     (format-crlf stream "")
+     ,@content-section))
+
 (defun http-format-chunked (code status headers)
-  (flex:with-output-to-sequence (stream)
-    (format-crlf stream "HTTP/1.1 ~A ~A" code status)
-    (http-headers-format headers stream)
-    (format-crlf stream "Transfer-Encoding: chunked")
-    (format-crlf stream "")))
+  (with-common-http-format (code status headers)
+    (format-crlf stream "Transfer-Encoding: chunked")))
 
 (defun http-format (body code status headers)
-  (flex:with-output-to-sequence (stream)
-    (format-crlf stream "HTTP/1.1 ~A ~A" code status)
-    (http-headers-format headers stream)
+  (with-common-http-format (code status headers)
     (format-crlf stream "Content-Length: ~A" (length body))
-    (format-crlf stream "")
     (write-sequence body stream)))
+
 
 (defun handler-close (handler &key uuid connections request)
   (handler-send handler ""
