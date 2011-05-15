@@ -218,7 +218,7 @@
                                   uuid connections request
                                   (code 200) (status "OK")
                                   (headers (list)))
-  (handler-send handler (http-format nil code status headers)
+  (handler-send handler (http-format-chunked code status headers)
                 :uuid uuid
                 :connections connections
                 :request request))
@@ -267,16 +267,20 @@
     (dolist (header headers)
       (format-crlf (or alt-stream stream) "~A: ~A" (car header) (cdr header)))))
 
+(defun http-format-chunked (code status headers)
+  (flex:with-output-to-sequence (stream)
+    (format-crlf stream "HTTP/1.1 ~A ~A" code status)
+    (http-headers-format headers stream)
+    (format-crlf stream "Transfer-Encoding: chunked")
+    (format-crlf stream "")))
+
 (defun http-format (body code status headers)
   (flex:with-output-to-sequence (stream)
     (format-crlf stream "HTTP/1.1 ~A ~A" code status)
     (http-headers-format headers stream)
-    (if body
-      (format-crlf stream "Content-Length: ~A" (length body))
-      (format-crlf stream "Transfer-Encoding: chunked" (length body)))
+    (format-crlf stream "Content-Length: ~A" (length body))
     (format-crlf stream "")
-    (when body
-      (write-sequence body stream))))
+    (write-sequence body stream)))
 
 (defun handler-close (handler &key uuid connections request)
   (handler-send handler ""
