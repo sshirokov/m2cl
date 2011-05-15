@@ -223,6 +223,10 @@
                 :connections connections
                 :request request))
 
+(defun handler-send-http-chunked-finish (handler &key uuid connections request)
+  (handler-send-http-chunk handler ""
+                           :uuid uuid :connections connections :request request))
+
 (defun handler-send-http-chunk (handler body
                                 &key
                                 uuid connections request
