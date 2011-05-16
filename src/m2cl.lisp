@@ -205,6 +205,44 @@
                 :connections connections
                 :request request))
 
+(defun handler-send-http-trailers (handler trailers &key
+                                   uuid connections request)
+  (handler-send handler (flex:with-output-to-sequence (stream)
+                          (http-headers-format trailers stream)
+                          (format-crlf stream ""))
+                :uuid uuid
+                :connections connections
+                :request request))
+
+(defun handler-send-http-chunked (handler &key
+                                  uuid connections request
+                                  (code 200) (status "OK")
+                                  (headers (list)))
+  (handler-send handler (http-format-chunked code status headers)
+                :uuid uuid
+                :connections connections
+                :request request))
+
+(defun handler-send-http-chunked-finish (handler &key uuid connections request)
+  (handler-send-http-chunk handler ""
+                           :uuid uuid :connections connections :request request))
+
+(defun handler-send-http-chunk (handler body
+                                &key
+                                uuid connections request
+                                binary-body-p)
+  (let* ((body (if binary-body-p
+                   body
+                   (babel:string-to-octets body)))
+         (chunk (flex:with-output-to-sequence (stream)
+                  (format-crlf stream "~X" (length body))
+                  (write-sequence body stream)
+                  (format-crlf stream ""))))
+    (handler-send handler chunk
+                  :uuid uuid
+                  :connections connections
+                  :request request)))
+
 (defun handler-send-http (handler body
                           &key
                           uuid connections request
@@ -224,14 +262,28 @@
                         format-string args #\Return #\Linefeed)))
     (write-sequence (babel:string-to-octets string) stream)))
 
-(defun http-format (body code status headers)
+(defun http-headers-format (headers &optional alt-stream)
   (flex:with-output-to-sequence (stream)
-    (format-crlf stream "HTTP/1.1 ~A ~A" code status)
-    (format-crlf stream "Content-Length: ~A" (length body))
     (dolist (header headers)
-      (format-crlf stream "~A: ~A" (car header) (cdr header)))
-    (format-crlf stream "")
+      (format-crlf (or alt-stream stream) "~A: ~A" (car header) (cdr header)))))
+
+(defmacro with-common-http-format ((code status headers) head-section &rest content-section)
+  `(flex:with-output-to-sequence (stream)
+     (format-crlf stream "HTTP/1.1 ~A ~A" ,code ,status)
+     (http-headers-format ,headers stream)
+     ,head-section
+     (format-crlf stream "")
+     ,@content-section))
+
+(defun http-format-chunked (code status headers)
+  (with-common-http-format (code status headers)
+    (format-crlf stream "Transfer-Encoding: chunked")))
+
+(defun http-format (body code status headers)
+  (with-common-http-format (code status headers)
+    (format-crlf stream "Content-Length: ~A" (length body))
     (write-sequence body stream)))
+
 
 (defun handler-close (handler &key uuid connections request)
   (handler-send handler ""
