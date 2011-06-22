@@ -181,7 +181,7 @@
                      &key uuid connections request)
   (assert (or request
               (and uuid connections)))
-  (let* ((uuid (or uuid (request-connection-id request)))
+  (let* ((uuid (or uuid (request-sender request)))
          (connections (or connections (list (request-connection-id request))))
          (connections-string (format nil "~{~A~^ ~}" connections))
          (data-sequence (etypecase data
