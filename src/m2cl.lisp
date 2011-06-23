@@ -31,6 +31,7 @@
     :accessor request-data
     :initform nil)))
 
+(defgeneric handler-read-request (handler))
 (defgeneric handler-receive (handler &optional timeout))
 (defgeneric handler-receive-json (handler &optional timeout))
 
@@ -64,14 +65,20 @@
              (zmq:setsockopt pub-socket zmq:identity ,sender-id)
              ,@body))))))
 
+(defmethod handler-read-request ((handler handler))
+  "Read a single request from the pull socket of HANDLER."
+  (let ((message (make-instance 'zmq:msg)))
+    (zmq:recv (handler-pull-socket handler) message)
+    (let* ((data (zmq:msg-data-as-array message))
+           (request (request-parse data)))
+      (values request data))))
+
 (defmethod handler-receive ((handler handler) &optional (timeout -1))
+  "Poll the pull socket of HANDLER until there is an available message, read
+it, and return the request it contains."
   (zmq:with-polls ((readers ((handler-pull-socket handler) . zmq:pollin)))
-    (let (req raw (message (make-instance 'zmq:msg)))
-      (when (zmq:poll readers timeout)
-        (setf raw (progn (zmq:recv (handler-pull-socket handler) message)
-                         (zmq:msg-data-as-array message))
-              req (request-parse raw)))
-      (values req raw))))
+    (when (zmq:poll readers timeout)
+      (handler-read-request handler))))
 
 (defmethod handler-receive-json ((handler handler) &optional (timeout -1))
   (multiple-value-bind (request raw) (handler-receive handler timeout)
