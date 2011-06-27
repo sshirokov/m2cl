@@ -7,6 +7,7 @@
            :request-disconnect-p
            :request-header :request-get
 
+           :handler
            :handler-pull-socket :handler-pub-socket
            :with-handler :with-handler-sockets
            :handler-read-request
