@@ -8,7 +8,7 @@
            :request-header :request-get
 
            :handler-pull-socket :handler-pub-socket
-           :with-handler
+           :with-handler :with-handler-sockets
            :handler-read-request
            :handler-receive :handler-receive-json
            :handler-send :handler-send-json :handler-send-http

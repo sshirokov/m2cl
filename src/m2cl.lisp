@@ -56,14 +56,21 @@
   (let ((context (gensym)))
     `(let ((,handler (make-instance 'handler)))
        (zmq:with-context (,context 1)
-         (zmq:with-socket (pull-socket ,context zmq:pull)
-           (setf (handler-pull-socket ,handler) pull-socket)
-           (zmq:connect pull-socket ,sub-address)
-           (zmq:with-socket (pub-socket ,context zmq:pub)
-             (setf (handler-pub-socket ,handler) pub-socket)
-             (zmq:connect pub-socket ,pub-address)
-             (zmq:setsockopt pub-socket zmq:identity ,sender-id)
-             ,@body))))))
+         (with-handler-sockets (,handler ,context ,sender-id
+                                         ,sub-address ,pub-address)
+           ,@body)))))
+
+(defmacro with-handler-sockets ((handler context sender-id
+                                         sub-address pub-address)
+                                &body body)
+  `(zmq:with-socket (pull-socket ,context zmq:pull)
+     (setf (handler-pull-socket ,handler) pull-socket)
+     (zmq:connect pull-socket ,sub-address)
+     (zmq:with-socket (pub-socket ,context zmq:pub)
+       (setf (handler-pub-socket ,handler) pub-socket)
+       (zmq:connect pub-socket ,pub-address)
+       (zmq:setsockopt pub-socket zmq:identity ,sender-id)
+       ,@body)))
 
 (defmethod handler-read-request ((handler handler))
   "Read a single request from the pull socket of HANDLER."
