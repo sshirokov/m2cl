@@ -32,8 +32,8 @@
     :initform nil)))
 
 (defgeneric handler-read-request (handler))
-(defgeneric handler-receive (handler &optional timeout))
-(defgeneric handler-receive-json (handler &optional timeout))
+(defgeneric handler-receive (handler &key timeout))
+(defgeneric handler-receive-json (handler &key timeout))
 
 (defgeneric request-disconnect-p (request)
   (:documentation "Returns t if the given `request' is a disconnect message"))
@@ -80,15 +80,16 @@
            (request (request-parse data)))
       (values request data))))
 
-(defmethod handler-receive ((handler handler) &optional (timeout -1))
+(defmethod handler-receive ((handler handler) &key (timeout -1))
   "Poll the pull socket of HANDLER until there is an available message, read
 it, and return the request it contains."
   (zmq:with-polls ((readers ((handler-pull-socket handler) . zmq:pollin)))
-    (when (zmq:poll readers timeout)
+    (when (zmq:poll readers :timeout timeout)
       (handler-read-request handler))))
 
-(defmethod handler-receive-json ((handler handler) &optional (timeout -1))
-  (multiple-value-bind (request raw) (handler-receive handler timeout)
+(defmethod handler-receive-json ((handler handler) &key (timeout -1))
+  (multiple-value-bind (request raw)
+      (handler-receive handler :timeout timeout)
     (when request
       (with-slots (data) request
         (unless data
