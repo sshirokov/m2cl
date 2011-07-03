@@ -1,6 +1,10 @@
 
 (in-package :m2cl)
 
+(defparameter *default-input-character-encoding*
+  babel:*default-character-encoding*
+  "The default character encoding used when parsing requests.")
+
 (defclass handler ()
   ((pull-socket
     :accessor handler-pull-socket)
@@ -105,8 +109,10 @@ it, and return the request it contains."
            (data (subseq string (+ colon 1) (+ colon length 1))))
       (unless (= (aref string (+ colon length 1)) (char-code #\,))
         (error "netstring doesn't end with comma"))
-      (values (babel:octets-to-string data)
-              (subseq string (+ colon length 2))))))
+      (values
+       (babel:octets-to-string data
+                               :encoding *default-input-character-encoding*)
+       (subseq string (+ colon length 2))))))
 
 (defun json-parse (string)
   (json:decode-json-from-string string))
@@ -133,7 +139,8 @@ it, and return the request it contains."
            (vector-push (char-code #\Space) bytes))
           (t
            (vector-push (char-code c) bytes)))))
-    (babel:octets-to-string bytes)))
+    (babel:octets-to-string bytes
+                            :encoding *default-input-character-encoding*)))
 
 (defun query-parse (string)
   (let ((data (list))
