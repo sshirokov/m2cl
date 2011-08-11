@@ -198,8 +198,12 @@ it, and return the request it contains."
                           (setf (request-get-parameters request)
                                 (query-parse query))))
                       request))
-      (:send-400 (&optional (body "Request parser has failed."))
-        (format *error-output* "Sending 400 to: ~A[~A]" sender connection-id)
+
+      (:send-400 (handler &optional (body "Request parser has failed."))
+        (ignore-errors
+          (handler-send-http handler body
+                             :code 400 :status "BAD REQUEST"
+                             :uuid sender :connections (list (parse-integer (coerce connection-id 'string)))))
         nil))))
 
 (defun handler-send (handler data
