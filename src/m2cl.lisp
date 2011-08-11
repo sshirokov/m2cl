@@ -181,23 +181,26 @@ it, and return the request it contains."
 (defun request-parse (array)
   (destructuring-bind (sender connection-id path rest)
       (token-parse-n array 3)
-    (multiple-value-bind (headers-string rest)
-        (netstring-parse rest)
-      (let ((request (make-instance 'request
-                                    :sender sender
-                                    :connection-id (parse-integer
-                                                    (coerce connection-id 'string))
-                                    :path path
-                                    :headers (headers-parse headers-string)
-                                    :body (netstring-parse rest))))
-        (when (string= (request-header request "METHOD") "JSON")
-          (setf (request-data request)
-                (json-parse (request-body request))))
-        (let ((query (request-header request "QUERY")))
-          (when query
-            (setf (request-get-parameters request)
-                  (query-parse query))))
-        request))))
+    (restart-case (multiple-value-bind (headers-string rest)
+                      (netstring-parse rest)
+                    (let ((request (make-instance 'request
+                                                  :sender sender
+                                                  :connection-id (parse-integer
+                                                                  (coerce connection-id 'string))
+                                                  :path path
+                                                  :headers (headers-parse headers-string)
+                                                  :body (netstring-parse rest))))
+                      (when (string= (request-header request "METHOD") "JSON")
+                        (setf (request-data request)
+                              (json-parse (request-body request))))
+                      (let ((query (request-header request "QUERY")))
+                        (when query
+                          (setf (request-get-parameters request)
+                                (query-parse query))))
+                      request))
+      (:send-400 (&optional (body "Request parser has failed."))
+        (format *error-output* "Sending 400 to: ~A[~A]" sender connection-id)
+        nil))))
 
 (defun handler-send (handler data
                      &key uuid connections request)
