@@ -199,10 +199,10 @@ it, and return the request it contains."
                                 (query-parse query))))
                       request))
 
-      (:send-400 (handler &optional (body "Request parser has failed."))
+      (:reply-http-400 (handler &optional (body "Request parser has failed."))
         (ignore-errors
           (handler-send-http handler body
-                             :code 400 :status "BAD REQUEST"
+                             :code 400 :status "Bad Request"
                              :uuid sender :connections (list (parse-integer (coerce connection-id 'string)))))
         nil))))
 
