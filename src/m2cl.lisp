@@ -179,32 +179,33 @@ it, and return the request it contains."
        (string= "disconnect" (cdr (assoc :type (request-data request))))))
 
 (defun request-parse (array)
-  (destructuring-bind (sender connection-id path rest)
+  (destructuring-bind (sender connection-id-string path rest)
       (token-parse-n array 3)
-    (restart-case (multiple-value-bind (headers-string rest)
-                      (netstring-parse rest)
-                    (let ((request (make-instance 'request
-                                                  :sender sender
-                                                  :connection-id (parse-integer
-                                                                  (coerce connection-id 'string))
-                                                  :path path
-                                                  :headers (headers-parse headers-string)
-                                                  :body (netstring-parse rest))))
-                      (when (string= (request-header request "METHOD") "JSON")
-                        (setf (request-data request)
-                              (json-parse (request-body request))))
-                      (let ((query (request-header request "QUERY")))
-                        (when query
-                          (setf (request-get-parameters request)
-                                (query-parse query))))
-                      request))
+    (let ((connection-id (parse-integer (coerce connection-id-string 'string))))
+      (restart-case
+          (multiple-value-bind (headers rest)
+              (netstring-parse rest)
+            (let ((request (make-instance 'request
+                                          :sender sender
+                                          :connection-id connection-id
+                                          :path path
+                                          :headers (headers-parse headers)
+                                          :body (netstring-parse rest))))
+              (when (string= (request-header request "METHOD") "JSON")
+                (setf (request-data request)
+                      (json-parse (request-body request))))
+              (let ((query (request-header request "QUERY")))
+                (when query
+                  (setf (request-get-parameters request)
+                        (query-parse query))))
+              request))
 
-      (:reply-http-400 (handler &optional (body "Request parser has failed."))
-        (ignore-errors
-          (handler-send-http handler body
-                             :code 400 :status "Bad Request"
-                             :uuid sender :connections (list (parse-integer (coerce connection-id 'string)))))
-        nil))))
+        (:reply-http-400 (handler &optional (body "Request parser has failed."))
+          (ignore-errors
+           (handler-send-http handler body
+                              :code 400 :status "Bad Request"
+                              :uuid sender :connections (list connection-id)))
+          nil)))))
 
 (defun handler-send (handler data
                      &key uuid connections request)
