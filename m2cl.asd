@@ -4,7 +4,8 @@
   :author "Nicolas Martyanoff"
   :license "BSD"
   :description "A handler for the mongrel2 HTTP server."
-  :depends-on (:babel :cl-json :cl-ppcre :flexi-streams :zeromq)
+  :depends-on (:babel :cl-json :cl-ppcre :flexi-streams
+               (:version :zeromq "0.1.7"))
   :in-order-to ((test-op (load-op m2cl-test)))
   :components ((:module "src"
                         :components ((:file "packages")
