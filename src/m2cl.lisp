@@ -88,7 +88,7 @@
   "Poll the pull socket of HANDLER until there is an available message, read
 it, and return the request it contains."
   (zmq:with-polls ((readers ((handler-pull-socket handler) . zmq:pollin)))
-    (when (zmq:poll readers :timeout timeout)
+    (when (zmq:poll readers :timeout timeout :retry t)
       (handler-read-request handler))))
 
 (defmethod handler-receive-json ((handler handler) &key (timeout -1))
