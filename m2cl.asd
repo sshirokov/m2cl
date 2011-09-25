@@ -5,7 +5,7 @@
   :license "BSD"
   :description "A handler for the mongrel2 HTTP server."
   :depends-on (:babel :cl-json :cl-ppcre :flexi-streams
-               (:version :zeromq "0.1.7"))
+               (:version :zeromq "0.1.8"))
   :in-order-to ((test-op (load-op m2cl-test)))
   :components ((:module "src"
                         :components ((:file "packages")
