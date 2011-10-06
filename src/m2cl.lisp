@@ -67,29 +67,32 @@
 (defmacro with-handler-sockets ((handler context sender-id
                                          sub-address pub-address)
                                 &body body)
-  `(zmq:with-socket (pull-socket ,context zmq:pull)
+  `(zmq:with-sockets ((pull-socket ,context :pull)
+                      (pub-socket ,context :pub))
      (setf (handler-pull-socket ,handler) pull-socket)
      (zmq:connect pull-socket ,sub-address)
-     (zmq:with-socket (pub-socket ,context zmq:pub)
-       (setf (handler-pub-socket ,handler) pub-socket)
-       (zmq:connect pub-socket ,pub-address)
-       (zmq:setsockopt pub-socket zmq:identity ,sender-id)
-       ,@body)))
+     (setf (handler-pub-socket ,handler) pub-socket)
+     (zmq:setsockopt pub-socket :identity ,sender-id)
+     (zmq:connect pub-socket ,pub-address)
+     ,@body))
 
 (defmethod handler-read-request ((handler handler))
   "Read a single request from the pull socket of HANDLER."
-  (let ((message (make-instance 'zmq:msg)))
+  (zmq:with-msg-init (message)
     (zmq:recv (handler-pull-socket handler) message)
-    (let* ((data (zmq:msg-data-as-array message))
+    (let* ((data (zmq:msg-data-array message))
            (request (request-parse data)))
       (values request data))))
 
 (defmethod handler-receive ((handler handler) &key (timeout -1))
   "Poll the pull socket of HANDLER until there is an available message, read
 it, and return the request it contains."
-  (zmq:with-polls ((readers ((handler-pull-socket handler) . zmq:pollin)))
-    (when (zmq:poll readers :timeout timeout)
-      (handler-read-request handler))))
+  (zmq:with-poll-items (items nb-items)
+                       (((handler-pull-socket handler) :pollin))
+    (when (> (zmq:poll items nb-items timeout))
+      (when (zmq:poll-item-event-signaled-p (zmq:poll-items-aref items 0)
+                                            :pollin)
+        (handler-read-request handler)))))
 
 (defmethod handler-receive-json ((handler handler) &key (timeout -1))
   (multiple-value-bind (request raw)
@@ -225,8 +228,9 @@ it, and return the request it contains."
                                               connections-string))
                                      stream)
                      (write-sequence data-sequence stream))))
-    (zmq:send (handler-pub-socket handler)
-              (make-instance 'zmq:msg :data msg-data))))
+    (format t "sending type ~A~%" (type-of msg-data))
+    (zmq:with-msg-init-data (message msg-data)
+      (zmq:send (handler-pub-socket handler) message))))
 
 (defun handler-send-json (handler data
                           &key uuid connections request)
