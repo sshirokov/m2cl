@@ -228,7 +228,6 @@ it, and return the request it contains."
                                               connections-string))
                                      stream)
                      (write-sequence data-sequence stream))))
-    (format t "sending type ~A~%" (type-of msg-data))
     (zmq:with-msg-init-data (message msg-data)
       (zmq:send (handler-pub-socket handler) message))))
 
