@@ -7,8 +7,9 @@
   :depends-on (:babel :cl-json :cl-ppcre :flexi-streams :zmq)
   :in-order-to ((test-op (load-op m2cl-test)))
   :components ((:module "src"
-                        :components ((:file "packages")
-                                     (:file "m2cl" :depends-on ("packages"))))))
+                :components ((:file "packages")
+                             (:file "m2cl" :depends-on ("packages"))
+                             (:file "resource" :depends-on ("m2cl"))))))
 
 (defmethod perform ((o asdf:test-op) (c (eql (find-system :m2cl))))
   (funcall (intern "RUN!" :5am)

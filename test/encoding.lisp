@@ -28,3 +28,15 @@
     (test-query "foo=;foo2=baz" (("foo" . nil) ("foo2" . "baz")))
     (test-query "foo=bar&foo2=baz" (("foo" . "bar") ("foo2" . "baz"))))
   (signals error (m2cl::query-parse "foo=ok&bar")))
+
+(test parse-absolute-path
+  (macrolet ((test-path (path expected-result)
+               `(is (equal (m2cl::parse-absolute-path ,path)
+                           ,expected-result))))
+    (test-path "/" '())
+    (test-path "/foo" '("foo"))
+    (test-path "/foo/bar" '("foo" "bar"))
+    (test-path "/foo/bar/baz" '("foo" "bar" "baz"))
+    (test-path "/foo/bar/" '("foo" "bar"))
+    (test-path "/foo///bar" '("foo" "bar")))
+  (signals error (m2cl::parse-absolute-path "foo")))
