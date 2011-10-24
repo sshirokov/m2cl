@@ -17,4 +17,6 @@
            :handler-send-http-chunked-finish :handler-send-http-trailers
            :handler-close
 
-           :url-decode))
+           :url-decode
+
+           :*resource-set*))
