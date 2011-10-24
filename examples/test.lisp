@@ -2,7 +2,8 @@
 (in-package :m2cl-examples)
 
 (defun test-run ()
-  (m2cl:with-handler (handler "dev" "tcp://127.0.0.1:8090" "tcp://127.0.0.1:8091")
+  (m2cl:with-handler (handler "dev"
+                              "tcp://127.0.0.1:8090" "tcp://127.0.0.1:8091")
     (loop
        (test-request-process handler (m2cl:handler-receive-json handler)))))
 
