@@ -90,8 +90,8 @@ it, and return the request it contains."
   (zmq:with-poll-items (items nb-items)
                        (((handler-pull-socket handler) :pollin))
     (when (> (zmq:poll items nb-items timeout))
-      (when (zmq:poll-item-event-signaled-p (zmq:poll-items-aref items 0)
-                                            :pollin)
+      (when (zmq:poll-item-events-signaled-p (zmq:poll-items-aref items 0)
+                                             :pollin)
         (handler-read-request handler)))))
 
 (defmethod handler-receive-json ((handler handler) &key (timeout -1))
