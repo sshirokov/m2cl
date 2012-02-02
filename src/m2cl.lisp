@@ -7,8 +7,10 @@
 
 (defclass handler ()
   ((pull-socket
+    :initarg :pull
     :accessor handler-pull-socket)
    (pub-socket
+    :initarg :pub
     :accessor handler-pub-socket)))
 
 (defclass request ()
